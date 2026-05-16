@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: assignment4-5
+    orgId: 1
+    folder: SRE End Term
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
