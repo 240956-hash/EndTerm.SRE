@@ -1,0 +1,30 @@
+---
+- name: Install Kubernetes tooling (k3s) for demo cluster
+  hosts: shop_nodes
+  become: true
+  tasks:
+    - name: Check if k3s is installed
+      ansible.builtin.command: k3s --version
+      register: k3s_version
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install k3s lightweight Kubernetes
+      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -
+      when: k3s_version.rc != 0
+
+    - name: Wait for k3s node ready
+      ansible.builtin.command: k3s kubectl get nodes
+      register: k3s_nodes
+      retries: 12
+      delay: 5
+      until: k3s_nodes.rc == 0
+      changed_when: false
+
+    - name: Copy kubeconfig for local user
+      ansible.builtin.shell: |
+        mkdir -p /home/{{ ansible_user }}/.kube
+        cp /etc/rancher/k3s/k3s.yaml /home/{{ ansible_user }}/.kube/config
+        chown -R {{ ansible_user }}:{{ ansible_user }} /home/{{ ansible_user }}/.kube
+      when: ansible_user is defined
+      changed_when: false

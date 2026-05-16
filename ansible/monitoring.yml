@@ -1,0 +1,23 @@
+---
+- name: Configure monitoring stack
+  hosts: shop_nodes
+  become: false
+  vars:
+    project_dir: /opt/shop-sre
+  tasks:
+    - name: Check Prometheus targets
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:9091/api/v1/targets"
+        return_content: true
+      register: prom_targets
+      ignore_errors: true
+
+    - name: Report Prometheus scrape status
+      ansible.builtin.debug:
+        msg: "Prometheus API reachable: {{ prom_targets.status | default('unreachable') }}"
+
+    - name: Check Grafana login page
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:3001/login"
+        status_code: 200
+      ignore_errors: true

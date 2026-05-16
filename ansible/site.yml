@@ -1,0 +1,125 @@
+---
+- name: Shop SRE — full stack deployment
+  hosts: shop_nodes
+  vars:
+    project_src: "{{ playbook_dir }}/.."
+  tasks:
+    - name: Install Docker dependencies
+      become: true
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - python3-pip
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Check if Docker is already installed
+      ansible.builtin.command: docker --version
+      register: docker_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Docker (Amazon Linux)
+      become: true
+      ansible.builtin.dnf:
+        name:
+          - docker
+          - git
+        state: present
+      when: ansible_os_family == "RedHat" and docker_check.rc != 0
+      async: 1800
+      poll: 30
+
+    - name: Enable Docker service (Amazon Linux)
+      become: true
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure Docker is installed (Debian/Ubuntu)
+      become: true
+      ansible.builtin.shell: |
+        if ! command -v docker; then
+          curl -fsSL https://get.docker.com | sh
+        fi
+      args:
+        creates: /usr/bin/docker
+      changed_when: false
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker Compose plugin (Debian)
+      become: true
+      ansible.builtin.apt:
+        name: docker-compose-plugin
+        state: present
+      when: ansible_os_family == "Debian"
+      ignore_errors: true
+
+    - name: Install docker-compose binary (Amazon Linux)
+      become: true
+      ansible.builtin.get_url:
+        url: https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: "0755"
+      when: ansible_os_family == "RedHat"
+
+    - name: Create project directory
+      become: true
+      ansible.builtin.file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Sync project files
+      become: true
+      ansible.builtin.synchronize:
+        src: "{{ project_src }}/"
+        dest: "{{ project_dir }}/"
+        delete: false
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=terraform/.terraform"
+          - "--exclude=terraform/*.tfstate*"
+
+    - name: Copy environment file
+      become: true
+      ansible.builtin.copy:
+        src: "{{ project_src }}/.env.example"
+        dest: "{{ project_dir }}/.env"
+        mode: "0644"
+        force: false
+
+    - name: Validate order DB configuration
+      become: true
+      ansible.builtin.command: python3 scripts/validate_env.py
+      args:
+        chdir: "{{ project_dir }}"
+      environment:
+        ORDER_DB_HOST: postgres
+
+    - name: Deploy application stack
+      become: true
+      ansible.builtin.command: >
+        {{ 'docker-compose' if ansible_os_family == 'RedHat' else 'docker compose' }}
+        -f {{ compose_file }}
+        {% if compose_override is defined %}-f {{ compose_override }}{% endif %}
+        up --build -d
+      args:
+        chdir: "{{ project_dir }}"
+      register: compose_up
+      changed_when: "'Started' in compose_up.stdout or 'Created' in compose_up.stdout or 'Built' in compose_up.stdout"
+
+    - name: Wait for API gateway health
+      become: true
+      ansible.builtin.uri:
+        url: "{{ health_check_url | default('http://127.0.0.1:8088/') }}"
+        status_code: 200
+      register: gateway_health
+      retries: 12
+      delay: 5
+      until: gateway_health.status == 200
+      ignore_errors: true
