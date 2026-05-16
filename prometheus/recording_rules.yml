@@ -1,0 +1,50 @@
+groups:
+  - name: sli_recording_rules
+    interval: 15s
+    rules:
+      # SLI: Availability — share of microservices reachable by Prometheus
+      - record: sli:availability:percent
+        expr: avg(up{job=~".*-service"}) * 100
+
+      # SLI: Latency p95 — average across services (more variation than global single line)
+      - record: sli:latency:p95_seconds
+        expr: avg(histogram_quantile(0.95, sum by (service, le) (rate(http_request_duration_seconds_bucket[1m]))))
+
+      # SLI: Latency p95 in milliseconds (for SLO <= 200ms)
+      - record: sli:latency:p95_milliseconds
+        expr: sli:latency:p95_seconds * 1000
+
+      # SLI: Business error rate (orders + payments + notifications)
+      - record: sli:error_rate:percent
+        expr: |
+          100 *
+          (
+            sum(increase(order_create_failures_total[1m])) +
+            sum(increase(payment_failures_total[1m])) +
+            sum(increase(notification_failures_total[1m]))
+          )
+          /
+          clamp_min(
+            sum(increase(order_create_attempts_total[1m])) +
+            sum(increase(payment_attempts_total[1m])) +
+            sum(increase(notifications_sent_total[1m])) +
+            sum(increase(notification_failures_total[1m])),
+            1
+          )
+
+      # SLI: Request success rate (complement of error rate on business ops)
+      - record: sli:success_rate:percent
+        expr: 100 - sli:error_rate:percent
+
+      # SLO compliance booleans (1 = meeting SLO, 0 = breaching)
+      - record: slo:availability:compliant
+        expr: sli:availability:percent >= bool 99
+
+      - record: slo:latency:compliant
+        expr: sli:latency:p95_milliseconds <= bool 200
+
+      - record: slo:error_rate:compliant
+        expr: sli:error_rate:percent <= bool 1
+
+      - record: slo:success_rate:compliant
+        expr: sli:success_rate:percent >= bool 99

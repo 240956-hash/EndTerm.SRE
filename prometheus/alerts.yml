@@ -1,0 +1,65 @@
+groups:
+  - name: microservices-alerts
+    rules:
+      - alert: HighRequestLatencyP95
+        expr: histogram_quantile(0.95, sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))) > 0.2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 latency on {{ $labels.service }}"
+          description: "p95 request latency exceeds 200ms SLO threshold."
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service down: {{ $labels.job }}"
+          description: "Prometheus cannot scrape {{ $labels.job }} (instance={{ $labels.instance }}) for >30s."
+
+      - alert: OrderServiceHighErrorRate
+        expr: increase(order_create_failures_total[2m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High order creation errors"
+          description: "order_create_failures_total increased by >5 over 2m. Potential DB/config issue."
+
+      - alert: PaymentServiceHighFailureRate
+        expr: increase(payment_failures_total[2m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High payment failure rate"
+          description: "payment_failures_total increased — check payment gateway simulation."
+
+      - alert: NotificationDeliveryFailures
+        expr: increase(notification_failures_total[2m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Notification delivery failures"
+          description: "Redis or notification-service may be unavailable."
+
+      - alert: ContainerHighCPUUsage
+        expr: (100 * sum by (job) (rate(process_cpu_seconds_total{job=~".*-service"}[2m]))) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High container CPU usage"
+          description: "compose_service={{ $labels.container_label_com_docker_compose_service }} CPU > 80% for 2m."
+
+      - alert: ContainerHighMemoryUsage
+        expr: (process_resident_memory_bytes{job=~".*-service"} / clamp_min(process_virtual_memory_bytes{job=~".*-service"}, 1)) > 0.85
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High container memory usage"
+          description: "compose_service={{ $labels.container_label_com_docker_compose_service }} working set memory > 85% of limit for 2m."
