@@ -1,0 +1,5 @@
+aws_region    = "us-east-1"
+instance_type = "t3.micro"
+ami_id        = "ami-098e39bafa7e7303d"
+key_name      = "shop-sre"
+ssh_cidr      = "0.0.0.0/0"
