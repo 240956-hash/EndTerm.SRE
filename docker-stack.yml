@@ -1,0 +1,153 @@
+# Docker Swarm stack — deploy after: docker swarm init
+# Usage: docker stack deploy -c docker-stack.yml shop
+
+services:
+  api-gateway:
+    image: shop-api-gateway:local
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "8088:80"
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - shop-net
+
+  frontend:
+    image: shop-frontend:local
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    deploy:
+      replicas: 1
+    networks:
+      - shop-net
+
+  auth-service:
+    image: shop-auth-service:local
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - shop-net
+
+  product-service:
+    image: shop-product-service:local
+    build:
+      context: .
+      dockerfile: services/product-service/Dockerfile
+    deploy:
+      replicas: 2
+    networks:
+      - shop-net
+
+  order-service:
+    image: shop-order-service:local
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    environment:
+      ORDER_DB_HOST: postgres
+      PAYMENT_SERVICE_URL: http://payment-service:8005
+      NOTIFICATION_SERVICE_URL: http://notification-service:8006
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks:
+      - shop-net
+
+  user-service:
+    image: shop-user-service:local
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    deploy:
+      replicas: 2
+    networks:
+      - shop-net
+
+  payment-service:
+    image: shop-payment-service:local
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+    deploy:
+      replicas: 2
+    networks:
+      - shop-net
+
+  notification-service:
+    image: shop-notification-service:local
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    environment:
+      REDIS_HOST: redis
+    deploy:
+      replicas: 2
+    networks:
+      - shop-net
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - shop-net
+
+  redis:
+    image: redis:7-alpine
+    deploy:
+      replicas: 1
+    networks:
+      - shop-net
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports:
+      - "9091:9090"
+    deploy:
+      replicas: 1
+    networks:
+      - shop-net
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    deploy:
+      replicas: 1
+    networks:
+      - shop-net
+
+networks:
+  shop-net:
+    driver: overlay
+
+volumes:
+  pg_data:

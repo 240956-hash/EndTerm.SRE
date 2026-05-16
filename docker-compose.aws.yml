@@ -1,0 +1,17 @@
+# Override for AWS EC2 — порты совпадают с terraform security group (80, 3000, 9090)
+services:
+  api-gateway:
+    ports:
+      - "80:80"
+
+  prometheus:
+    ports:
+      - "9090:9090"
+
+  grafana:
+    ports:
+      - "3000:3000"
+
+  cadvisor:
+    ports:
+      - "8081:8080"
