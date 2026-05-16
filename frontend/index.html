@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop Microservices Demo</title>
+  <style>
+    :root {
+      --bg: #f3f7ff;
+      --card: #ffffff;
+      --card-2: #f8fbff;
+      --text: #182234;
+      --muted: #5f6b7a;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent: #8b5cf6;
+      --ok: #0f766e;
+      --danger: #b91c1c;
+      --border: #e5ecf5;
+      --ring: rgba(37, 99, 235, 0.18);
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+      --shadow-soft: 0 4px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    body.dark {
+      --bg: #0b1220;
+      --card: #121a2a;
+      --card-2: #0f1728;
+      --text: #dce6f7;
+      --muted: #9ba8bf;
+      --primary: #4f8dff;
+      --primary-dark: #3f7aea;
+      --accent: #a78bfa;
+      --ok: #22c55e;
+      --danger: #fb7185;
+      --border: #253148;
+      --ring: rgba(79, 141, 255, 0.22);
+      --shadow: 0 10px 30px rgba(2, 8, 23, 0.45);
+      --shadow-soft: 0 4px 12px rgba(2, 8, 23, 0.3);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% -10%, rgba(37, 99, 235, 0.14), transparent 38%),
+        radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.12), transparent 35%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 16px 32px;
+    }
+
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      right: -140px;
+      top: -130px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.16), transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    h1 { margin: 0 0 8px; font-size: 32px; letter-spacing: -0.4px; }
+    .subtitle { margin: 0; color: var(--muted); }
+
+    .hero-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card-2);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toggle {
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .status {
+      margin-top: 14px;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      background: #ecfeff;
+      color: #0e7490;
+      border: 1px solid #bae6fd;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+
+    .stats {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stat .v {
+      margin-top: 4px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .card h2 { margin-top: 0; font-size: 20px; }
+    .help { color: var(--muted); font-size: 14px; margin-top: -6px; margin-bottom: 10px; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    label { display: block; font-size: 13px; margin-bottom: 6px; color: #334155; }
+    body.dark label { color: #b6c4de; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid #d4dbe7;
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      background: var(--card);
+      color: var(--text);
+    }
+    body.dark input, body.dark textarea { border-color: #2d3b56; }
+
+    textarea { min-height: 78px; resize: vertical; }
+    input:focus, textarea:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px var(--ring); }
+    input.invalid, textarea.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14); }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+    button:hover { background: var(--primary-dark); }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    button.ghost:hover { background: var(--card-2); }
+
+    .result {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card-2);
+      padding: 12px;
+      min-height: 100px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+
+    .ok { color: var(--ok); }
+    .err { color: var(--danger); }
+
+    .table-wrap {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+      max-height: 230px;
+      background: var(--card-2);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--card-2); }
+
+    .toast-wrap {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 999;
+      display: grid;
+      gap: 8px;
+      width: min(360px, calc(100vw - 32px));
+    }
+    .toast {
+      border-radius: 12px;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: var(--card);
+      font-size: 13px;
+      color: var(--text);
+      animation: slideIn 0.18s ease;
+    }
+    .toast.ok { border-left: 4px solid var(--ok); }
+    .toast.err { border-left: 4px solid var(--danger); }
+    @keyframes slideIn {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .hero-top { flex-direction: column; align-items: flex-start; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>Shop Microservices Portal</h1>
+      <p class="subtitle">API Gateway</p>
+        </div>
+        <div class="hero-right">
+          <span class="pill" id="clockPill">--:--:--</span>
+          <button class="toggle ghost" onclick="toggleTheme()">Toggle Theme</button>
+        </div>
+      </div>
+      <div class="status">API base: <strong id="apiBaseLabel"></strong></div>
+      <div class="stats">
+        <div class="stat"><div class="k">Requests sent</div><div class="v" id="statRequests">0</div></div>
+        <div class="stat"><div class="k">Successful</div><div class="v" id="statSuccess">0</div></div>
+        <div class="stat"><div class="k">Failed</div><div class="v" id="statFailed">0</div></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Authentication</h2>
+        <p class="help">Вход пользователя через `auth-service`.</p>
+        <div class="row">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" value="student" />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" value="password123" type="password" />
+          </div>
+        </div>
+        <div class="actions">
+          <button onclick="login()">Login</button>
+          <button class="secondary" onclick="registerUser()">Register</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Products</h2>
+        <p class="help">Получение списка товаров из `product-service`.</p>
+        <div class="actions">
+          <button onclick="getProducts()">Load Products</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Price</th></tr></thead>
+            <tbody id="productsTableBody"><tr><td colspan="3">No data</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Orders</h2>
+        <p class="help">Создай и посмотри заказы через `order-service`.</p>
+        <div class="row">
+          <div>
+            <label for="userId">User ID</label>
+            <input id="userId" type="number" value="1" />
+          </div>
+          <div>
+            <label for="productId">Product ID</label>
+            <input id="productId" type="number" value="2" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="quantity">Quantity</label>
+            <input id="quantity" type="number" value="1" min="1" />
+          </div>
+          <div></div>
+        </div>
+        <div class="actions">
+          <button onclick="createOrder()">Create Order</button>
+          <button class="secondary" onclick="getOrders()">Get Orders</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>User</th><th>Product</th><th>Qty</th></tr></thead>
+            <tbody id="ordersTableBody"><tr><td colspan="4">No data</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>User Profile</h2>
+        <p class="help">Профиль пользователя через `user-profile-service`.</p>
+        <div class="row">
+          <div>
+            <label for="lookupUserId">Lookup User ID</label>
+            <input id="lookupUserId" type="number" value="1" />
+          </div>
+          <div></div>
+        </div>
+        <div class="actions">
+          <button onclick="getUser()">Get User</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Payment</h2>
+        <p class="help">Симуляция оплаты через `payment-service`.</p>
+        <div class="row">
+          <div>
+            <label for="paymentOrderId">Order ID</label>
+            <input id="paymentOrderId" type="number" value="1" />
+          </div>
+          <div>
+            <label for="paymentAmount">Amount (USD)</label>
+            <input id="paymentAmount" type="number" value="19.99" step="0.01" />
+          </div>
+        </div>
+        <div class="actions">
+          <button onclick="payOrder()">Process Payment</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Notifications</h2>
+        <p class="help">Email/alert симуляция через `notification-service` + Redis.</p>
+        <label for="notifySubject">Subject</label>
+        <input id="notifySubject" value="Order update" />
+        <label for="notifyBody">Message</label>
+        <textarea id="notifyBody">Ваш заказ обрабатывается.</textarea>
+        <div class="actions">
+          <button onclick="sendNotification()">Send Notification</button>
+          <button class="secondary" onclick="getNotifications()">List Notifications</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="card" style="margin-top: 14px;">
+      <h2>Response</h2>
+      <div id="responseMeta" class="help">Ready</div>
+      <div class="actions" style="margin-top: 6px;">
+        <button class="ghost" onclick="clearResponse()">Clear response</button>
+      </div>
+      <div id="output" class="result">{
+  "message": "Заполни форму и отправь запрос"
+}</div>
+    </section>
+  </div>
+  <div id="toastWrap" class="toast-wrap"></div>
+
+<script>
+  const out = document.getElementById('output');
+  const meta = document.getElementById('responseMeta');
+  // Use same-origin by default so the UI works on any host/port mapping (e.g. :8088).
+  const API_BASE = '';
+  const stats = { requests: 0, success: 0, failed: 0 };
+  document.getElementById('apiBaseLabel').textContent = API_BASE || 'same-origin';
+  hydrateTheme();
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clockPill').textContent = now.toLocaleTimeString();
+  }
+
+  function hydrateTheme() {
+    const theme = localStorage.getItem('shop_theme');
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+    }
+  }
+
+  function toggleTheme() {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('shop_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  }
+
+  function renderStats() {
+    document.getElementById('statRequests').textContent = String(stats.requests);
+    document.getElementById('statSuccess').textContent = String(stats.success);
+    document.getElementById('statFailed').textContent = String(stats.failed);
+  }
+
+  function toast(message, ok = true) {
+    const wrap = document.getElementById('toastWrap');
+    const el = document.createElement('div');
+    el.className = `toast ${ok ? 'ok' : 'err'}`;
+    el.textContent = message;
+    wrap.prepend(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  function markInvalid(ids) {
+    ids.forEach((id) => document.getElementById(id).classList.add('invalid'));
+  }
+
+  function clearInvalid(...ids) {
+    ids.forEach((id) => document.getElementById(id).classList.remove('invalid'));
+  }
+
+  function readInt(id, fallback = 1) {
+    const value = Number(document.getElementById(id).value);
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  async function call(path, method = 'GET', body) {
+    stats.requests += 1;
+    renderStats();
+    meta.className = 'help';
+    meta.textContent = `Loading: ${method} ${path}`;
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { raw: text };
+      }
+
+      out.textContent = JSON.stringify(data, null, 2);
+      if (res.ok) {
+        stats.success += 1;
+        renderStats();
+        meta.className = 'help ok';
+        meta.textContent = `Success: ${res.status} ${res.statusText}`;
+        toast(`${method} ${path} -> ${res.status}`, true);
+      } else {
+        stats.failed += 1;
+        renderStats();
+        meta.className = 'help err';
+        meta.textContent = `Request failed: ${res.status} ${res.statusText}`;
+        toast(`${method} ${path} -> ${res.status}`, false);
+      }
+      return data;
+    } catch (err) {
+      stats.failed += 1;
+      renderStats();
+      meta.className = 'help err';
+      meta.textContent = 'Network error';
+      out.textContent = JSON.stringify({ error: String(err) }, null, 2);
+      toast(`Network error for ${method} ${path}`, false);
+      return null;
+    }
+  }
+
+  function login() {
+    clearInvalid('username', 'password');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    if (!username || !password) {
+      markInvalid(['username', 'password']);
+      toast('Username и password обязательны', false);
+      return;
+    }
+    return call('/api/auth/login', 'POST', { username, password });
+  }
+
+  async function registerUser() {
+    clearInvalid('username', 'password');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    if (!username || !password) {
+      markInvalid(['username', 'password']);
+      toast('Username и password обязательны', false);
+      return;
+    }
+    if (username.length < 3 || password.length < 6) {
+      markInvalid(['username', 'password']);
+      toast('Username >= 3 символов, password >= 6 символов', false);
+      return;
+    }
+    const data = await call('/api/auth/register', 'POST', { username, password });
+    if (data && data.user) {
+      toast(`Пользователь ${data.user} зарегистрирован`, true);
+    }
+  }
+
+  async function getProducts() {
+    const data = await call('/api/products/products');
+    const rows = (data && data.items) || [];
+    const tbody = document.getElementById('productsTableBody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="3">No data</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((p) => (
+      `<tr><td>${p.id}</td><td>${p.name}</td><td>$${Number(p.price).toFixed(2)}</td></tr>`
+    )).join('');
+  }
+
+  async function createOrder() {
+    clearInvalid('userId', 'productId', 'quantity');
+    const user_id = readInt('userId', 1);
+    const product_id = readInt('productId', 1);
+    const quantity = Math.max(1, readInt('quantity', 1));
+    const bad = [];
+    if (user_id <= 0) bad.push('userId');
+    if (product_id <= 0) bad.push('productId');
+    if (quantity <= 0) bad.push('quantity');
+    if (bad.length) {
+      markInvalid(bad);
+      toast('Проверь значения заказа (ID > 0, quantity > 0)', false);
+      return;
+    }
+    const data = await call('/api/orders/orders', 'POST', { user_id, product_id, quantity });
+    if (data && data.order) {
+      getOrders();
+    }
+  }
+
+  async function getOrders() {
+    const data = await call('/api/orders/orders');
+    const rows = (data && data.items) || [];
+    const tbody = document.getElementById('ordersTableBody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4">No data</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((o) => (
+      `<tr><td>${o.id}</td><td>${o.user_id}</td><td>${o.product_id}</td><td>${o.quantity}</td></tr>`
+    )).join('');
+  }
+
+  function getUser() {
+    clearInvalid('lookupUserId');
+    const userId = readInt('lookupUserId', 1);
+    if (userId <= 0) {
+      markInvalid(['lookupUserId']);
+      toast('User ID должен быть больше 0', false);
+      return;
+    }
+    return call(`/api/users/users/${userId}`);
+  }
+
+  function payOrder() {
+    clearInvalid('paymentOrderId', 'paymentAmount');
+    const order_id = readInt('paymentOrderId', 1);
+    const amount = Number(document.getElementById('paymentAmount').value);
+    if (order_id <= 0 || !Number.isFinite(amount) || amount <= 0) {
+      markInvalid(['paymentOrderId', 'paymentAmount']);
+      toast('Проверь Order ID и Amount', false);
+      return;
+    }
+    return call('/api/payments/payments', 'POST', { order_id, amount, currency: 'USD' });
+  }
+
+  function sendNotification() {
+    clearInvalid('notifySubject', 'notifyBody');
+    const subject = document.getElementById('notifySubject').value.trim();
+    const body = document.getElementById('notifyBody').value.trim();
+    const user_id = readInt('userId', 1);
+    if (!subject || !body) {
+      markInvalid(['notifySubject', 'notifyBody']);
+      toast('Subject и message обязательны', false);
+      return;
+    }
+    return call('/api/notifications/notify', 'POST', {
+      user_id,
+      channel: 'email',
+      subject,
+      body,
+    });
+  }
+
+  function getNotifications() {
+    return call('/api/notifications/notifications');
+  }
+
+  function clearResponse() {
+    meta.className = 'help';
+    meta.textContent = 'Ready';
+    out.textContent = JSON.stringify({ message: 'Response cleared' }, null, 2);
+  }
+
+  renderStats();
+</script>
+</body>
+</html>
