@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-config
+  namespace: shop-sre
+data:
+  ORDER_DB_HOST: postgres
+  ORDER_DB_PORT: "5432"
+  ORDER_DB_USER: app
+  ORDER_DB_PASSWORD: app
+  ORDER_DB_NAME: shop
+  PAYMENT_SERVICE_URL: http://payment-service:8005
+  NOTIFICATION_SERVICE_URL: http://notification-service:8006
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
